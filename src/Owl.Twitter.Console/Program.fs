@@ -1,23 +1,21 @@
-﻿open System.Net.Http
+﻿open Owl.Twitter
 
-let toAsync = Async.AwaitTask
-let run = Async.RunSynchronously
+let run = Async.AwaitTask >> Async.RunSynchronously
 
 [<Literal>]
 let token = ""
 
 [<EntryPoint>]
 let main _ =
-  use client = new HttpClient()
-  use request = new HttpRequestMessage(HttpMethod.Get, "https://api.twitter.com/2/tweets/search/recent?max_results=10&query=from:Twitter")
-  request.Headers.Add("ContentType", "application/json")
-  request.Headers.Add("Authorization", $"Bearer %s{token}")
+  let client = Twitter.connect token
 
-  task {
-    use! r = client.SendAsync(request)
-    return! r.Content.ReadAsStringAsync()
+  recent'search client {
+    query "from:Twitter"
+    max_results 10<counts>
+    search
   }
-  |> (toAsync >> run)
+  |> run
   |> printfn "%s"
-  
+
+  client |> Twitter.disconnect
   0
