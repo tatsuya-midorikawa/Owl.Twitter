@@ -16,6 +16,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Include="ParameterUnit.fs" />
+	  <Compile Include="SearchTweets.fs" />
 	  <None Include="..\..\assets\owl.twitter.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
