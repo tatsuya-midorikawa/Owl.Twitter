@@ -7,8 +7,10 @@ open Microsoft.FSharp.Core.CompilerServices
 
 [<AutoOpen>]
 module SearchTweets = 
+  // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
   [<Literal>]
   let private ep_recent = "https://api.twitter.com/2/tweets/search/recent"
+  // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-all
   [<Literal>]
   let private ep_all = "https://api.twitter.com/2/tweets/search/all"
   
