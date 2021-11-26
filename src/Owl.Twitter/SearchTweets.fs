@@ -105,17 +105,27 @@ module SearchTweets =
 
     member __.Yield (_: unit) = ()
     member __.Zero() = ()
-
+    
+    // ■ List of Query operators
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query#list
     [<CustomOperation("query")>]
     member __.Query(_: unit, q: string) = query <- q
-    [<CustomOperation("expansions")>]
-    member __.Add(_: unit, exp: Expansions) = expansions.Add(exp.value)
-    [<CustomOperation("expansions")>]
-    member __.AddMany(_: unit, exp: Expansions[]) = exp |> Array.map (fun e -> e.value) |> expansions.AddMany
+    
     [<CustomOperation("end_time")>]
     member __.Set(_: unit, et: DateTime) = end'time <- Option.Some(et)
+
+    // ■ Expansions
+    // https://developer.twitter.com/en/docs/twitter-api/expansions
+    [<CustomOperation("expansions")>]
+    member __.Add(_: unit, exp: Expansions) = expansions.Add(exp.value)
+    [<CustomOperation("add")>]
+    member __.And(_: unit, exp: Expansions) = expansions.Add(exp.value)
+    [<CustomOperation("expansions")>]
+    member __.AddMany(_: unit, exp: Expansions[]) = exp |> Array.map (fun e -> e.value) |> expansions.AddMany
+    
     [<CustomOperation("max_results")>]
     member __.Set(_: unit, count: int<counts>) = max'results <- Option.Some(count)
+
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
       if String.IsNullOrEmpty(query) then raise (ArgumentException("'query' must be called."))
@@ -124,11 +134,13 @@ module SearchTweets =
 
       // query
       params'.Add($"query={query}")
+      // end_time
+      if end'time.IsSome then params'.Add $"""end_time={(end'time.Value.ToString "yyyy-MM-ddTHH:mm:ssZ")}"""
       // expansions
       let expansions = (',', expansions.Close()) |> String.Join
-      if String.IsNullOrEmpty(expansions) |> not then params'.Add($"expansions=%s{expansions}")
+      if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // max_results
-      if max'results.IsSome then params'.Add($"max_results=%d{max'results.Value}")
+      if max'results.IsSome then params'.Add $"max_results=%d{max'results.Value}"
 
       let p =  ('&', params'.Close()) |> String.Join
 
@@ -140,6 +152,12 @@ module SearchTweets =
         use! r = client.http.SendAsync(request)
         return! r.Content.ReadAsStringAsync()
       }
+      
+    [<CustomOperation("sync")>]
+    member __.Sync(task: System.Threading.Tasks.Task<'T>) =
+      System.Threading.Tasks.Task.WaitAll task
+      task.Result
+
 
   let recent'search client = RecentSearchTweetsBuilder client
 
