@@ -116,4 +116,13 @@ timelines'mentions client {
 }
 |> printfn "%s"
 
+printfn "----------"
+
+users'by  client {
+  usernames "_midoliy_"
+  search
+  sync
+}
+|> printfn "%s"
+
 client |> Twitter.disconnect
