@@ -30,6 +30,16 @@ module Types =
     static member referenced'tweets'id = { value = "referenced_tweets.id" }
     static member referenced'tweets'id'author'id = { value = "referenced_tweets.id.author_id" }
 
+  type Exclude = 
+    { value: string }
+    static member next'token = { value = "next_token" }
+    static member previous'token = { value = "previous_token" }
+    
+  type PaginationToken = 
+    { value: string }
+    static member retweets = { value = "retweets" }
+    static member replies = { value = "replies" }
+
   type MediaFields =
     { value: string }
     static member duration'ms = { value = "duration_ms" }

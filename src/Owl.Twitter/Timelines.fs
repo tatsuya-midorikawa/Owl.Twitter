@@ -6,20 +6,21 @@ open System.Net.Http
 open Microsoft.FSharp.Core.CompilerServices
 
 [<AutoOpen>]
-module SearchTweets = 
-  // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
-  [<Literal>]
-  let private ep_recent = "https://api.twitter.com/2/tweets/search/recent"
-  // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-all
-  [<Literal>]
-  let private ep_all = "https://api.twitter.com/2/tweets/search/all"
+module Timelines = 
+  // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+  let private ep_tweets id = $"https://api.twitter.com/2/users/%s{id}/tweets"
+  // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-mentions
+  let private ep_mentions id = $"https://api.twitter.com/2/users/%s{id}/mentions"
 
-  type SearchRecentTweetsBuilder (client: Twitter.Client) =
-    let mutable query = ""
+  type TimelinesTweetsBuilder (client: Twitter.Client) =
+    let mutable id = ""
     let mutable since'id = Option<string>.None
     let mutable until'id = Option<string>.None
     let mutable start'time = Option<DateTime>.None
     let mutable end'time = Option<DateTime>.None
+    let mutable exclude = Option<string>.None
+    let mutable pagination'token = Option<string>.None
+
     let mutable max'results = Option<int<counts>>.None
     let mutable expansions = ListCollector<string>()
     let mutable media'fields = ListCollector<string>()
@@ -31,30 +32,40 @@ module SearchTweets =
     member __.Yield (_: unit) = ()
     member __.Zero() = ()
     
-    // ■ List of Query operators
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query#list
-    [<CustomOperation("query")>]
-    member __.Query(_: unit, q: string) = query <- q
+    // ■ id
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+    [<CustomOperation("id")>]
+    member __.Id(_: unit, id': string) = id <- id'
     
     // ■ since_id
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("since_id")>]
     member __.SinceId(_: unit, id: string) = since'id <- Option.Some(id)
 
     // ■ until_id
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("until_id")>]
     member __.UntileId(_: unit, id: string) = until'id <- Option.Some(id)
     
     // ■ start_time
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("start_time")>]
     member __.SetStartTime(_: unit, st: DateTime) = start'time <- Option.Some(st)
 
     // ■ end_time
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("end_time")>]
     member __.SetEndTime(_: unit, et: DateTime) = end'time <- Option.Some(et)
+
+    // ■ exclude
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+    [<CustomOperation("exclude")>]
+    member __.Set(_: unit, exclude': Exclude) = exclude <- Option.Some(exclude'.value)
+
+    // ■ pagination_token
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+    [<CustomOperation("pagination_token")>]
+    member __.Set(_: unit, pagination'token': PaginationToken) = pagination'token <- Option.Some(pagination'token'.value)
 
     // ■ expansions
     // https://developer.twitter.com/en/docs/twitter-api/expansions
@@ -114,15 +125,19 @@ module SearchTweets =
     member __.And(_: unit, uf: UserFields) = user'fields.Add(uf.value)
     [<CustomOperation("user'fields")>]
     member __.AddMany(_: unit, uf: UserFields[]) = uf |> Array.map (fun e -> e.value) |> user'fields.AddMany
+    
+    [<CustomOperation("sync")>]
+    member __.Sync(task: System.Threading.Tasks.Task<'T>) =
+      System.Threading.Tasks.Task.WaitAll task
+      task.Result
 
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
-      if String.IsNullOrEmpty(query) then raise (ArgumentException("'query' must be called."))
+      if String.IsNullOrEmpty(id) then raise (ArgumentException("'id' must be called."))
 
+      let ep = ep_tweets id
       let mutable params' = ListCollector<string>()
 
-      // query
-      params'.Add($"query={query}")
       // since_id
       since'id |> Option.iter (fun id -> params'.Add $"since_id={id}")
       // until_id
@@ -131,6 +146,10 @@ module SearchTweets =
       start'time |> Option.iter (fun time -> params'.Add$"""start_time={time |> to_string}""")
       // end_time
       end'time |> Option.iter (fun time -> params'.Add$"""end_time={time |> to_string}""")
+      // exclude
+      exclude |> Option.iter (fun e -> params'.Add$"""exclude={e}""")
+      // pagination_token
+      pagination'token |> Option.iter (fun p -> params'.Add$"""pagination_token={p}""")
       // expansions
       let expansions = (',', expansions.Close()) |> String.Join
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
@@ -154,7 +173,7 @@ module SearchTweets =
       
       let p =  ('&', params'.Close()) |> String.Join
 
-      use request = new HttpRequestMessage(HttpMethod.Get, $"{ep_recent}?{p}")
+      use request = new HttpRequestMessage(HttpMethod.Get, $"{ep}?{p}")
       request.Headers.Add("ContentType", "application/json")
       request.Headers.Add("Authorization", $"Bearer %s{client.bearer}")
 
@@ -163,17 +182,15 @@ module SearchTweets =
         return! r.Content.ReadAsStringAsync()
       }
       
-    [<CustomOperation("sync")>]
-    member __.Sync(task: System.Threading.Tasks.Task<'T>) =
-      System.Threading.Tasks.Task.WaitAll task
-      task.Result
-
-  type SearchAllTweetsBuilder (client: Twitter.Client) =
-    let mutable query = ""
+  type TimelinesMentionsBuilder (client: Twitter.Client) =
+    let mutable id = ""
     let mutable since'id = Option<string>.None
     let mutable until'id = Option<string>.None
     let mutable start'time = Option<DateTime>.None
     let mutable end'time = Option<DateTime>.None
+    let mutable exclude = Option<string>.None
+    let mutable pagination'token = Option<string>.None
+
     let mutable max'results = Option<int<counts>>.None
     let mutable expansions = ListCollector<string>()
     let mutable media'fields = ListCollector<string>()
@@ -185,30 +202,40 @@ module SearchTweets =
     member __.Yield (_: unit) = ()
     member __.Zero() = ()
     
-    // ■ List of Query operators
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query#list
-    [<CustomOperation("query")>]
-    member __.Query(_: unit, q: string) = query <- q
+    // ■ id
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+    [<CustomOperation("id")>]
+    member __.Id(_: unit, id': string) = id <- id'
     
     // ■ since_id
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("since_id")>]
     member __.SinceId(_: unit, id: string) = since'id <- Option.Some(id)
 
     // ■ until_id
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("until_id")>]
     member __.UntileId(_: unit, id: string) = until'id <- Option.Some(id)
     
     // ■ start_time
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("start_time")>]
     member __.SetStartTime(_: unit, st: DateTime) = start'time <- Option.Some(st)
 
     // ■ end_time
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("end_time")>]
     member __.SetEndTime(_: unit, et: DateTime) = end'time <- Option.Some(et)
+
+    // ■ exclude
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+    [<CustomOperation("exclude")>]
+    member __.Set(_: unit, exclude': Exclude) = exclude <- Option.Some(exclude'.value)
+
+    // ■ pagination_token
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+    [<CustomOperation("pagination_token")>]
+    member __.Set(_: unit, pagination'token': PaginationToken) = pagination'token <- Option.Some(pagination'token'.value)
 
     // ■ expansions
     // https://developer.twitter.com/en/docs/twitter-api/expansions
@@ -268,15 +295,19 @@ module SearchTweets =
     member __.And(_: unit, uf: UserFields) = user'fields.Add(uf.value)
     [<CustomOperation("user'fields")>]
     member __.AddMany(_: unit, uf: UserFields[]) = uf |> Array.map (fun e -> e.value) |> user'fields.AddMany
+    
+    [<CustomOperation("sync")>]
+    member __.Sync(task: System.Threading.Tasks.Task<'T>) =
+      System.Threading.Tasks.Task.WaitAll task
+      task.Result
 
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
-      if String.IsNullOrEmpty(query) then raise (ArgumentException("'query' must be called."))
+      if String.IsNullOrEmpty(id) then raise (ArgumentException("'id' must be called."))
 
+      let ep = ep_mentions id
       let mutable params' = ListCollector<string>()
 
-      // query
-      params'.Add($"query={query}")
       // since_id
       since'id |> Option.iter (fun id -> params'.Add $"since_id={id}")
       // until_id
@@ -285,6 +316,10 @@ module SearchTweets =
       start'time |> Option.iter (fun time -> params'.Add$"""start_time={time |> to_string}""")
       // end_time
       end'time |> Option.iter (fun time -> params'.Add$"""end_time={time |> to_string}""")
+      // exclude
+      exclude |> Option.iter (fun e -> params'.Add$"""exclude={e}""")
+      // pagination_token
+      pagination'token |> Option.iter (fun p -> params'.Add$"""pagination_token={p}""")
       // expansions
       let expansions = (',', expansions.Close()) |> String.Join
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
@@ -308,7 +343,7 @@ module SearchTweets =
       
       let p =  ('&', params'.Close()) |> String.Join
 
-      use request = new HttpRequestMessage(HttpMethod.Get, $"{ep_all}?{p}")
+      use request = new HttpRequestMessage(HttpMethod.Get, $"{ep}?{p}")
       request.Headers.Add("ContentType", "application/json")
       request.Headers.Add("Authorization", $"Bearer %s{client.bearer}")
 
@@ -316,14 +351,9 @@ module SearchTweets =
         use! r = client.http.SendAsync(request)
         return! r.Content.ReadAsStringAsync()
       }
-      
-    [<CustomOperation("sync")>]
-    member __.Sync(task: System.Threading.Tasks.Task<'T>) =
-      System.Threading.Tasks.Task.WaitAll task
-      task.Result
 
-  let search'recent client = SearchRecentTweetsBuilder client
-  let search'all client = SearchAllTweetsBuilder client
+  let timelines'tweets client = TimelinesTweetsBuilder client
+  let timelines'mentions client = TimelinesMentionsBuilder client
 
 
   
