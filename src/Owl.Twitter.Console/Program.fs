@@ -63,7 +63,7 @@ search'all client {
 printfn "----------"
 
 timelines'tweets client {
-  id ""
+  id "909795210481119232"
   end_time (DateTime.Now.AddSeconds -30)
   
   expansions Expansions.author'id
@@ -91,7 +91,7 @@ timelines'tweets client {
 printfn "----------"
 
 timelines'mentions client {
-  id ""
+  id "909795210481119232"
   end_time (DateTime.Now.AddSeconds -30)
   
   expansions Expansions.author'id
@@ -111,6 +111,42 @@ timelines'mentions client {
   add PollFields.id
 
   max_results 10<counts>
+  search
+  sync
+}
+|> printfn "%s"
+
+printfn "----------"
+
+users'by client {
+  usernames "_midoliy_"
+  search
+  sync
+}
+|> printfn "%s"
+
+printfn "----------"
+
+users'by'username client {
+  username "_midoliy_"
+  search
+  sync
+}
+|> printfn "%s"
+
+printfn "----------"
+
+users client {
+  ids "909795210481119232"
+  search
+  sync
+}
+|> printfn "%s"
+
+printfn "----------"
+
+users'id client {
+  id "909795210481119232"
   search
   sync
 }
