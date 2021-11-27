@@ -105,6 +105,7 @@ module SearchTweets =
   type RecentSearchTweetsBuilder (client: Twitter.Client) =
     let mutable query = ""
     let mutable since'id = Option<string>.None
+    let mutable until'id = Option<string>.None
     let mutable start'time = Option<DateTime>.None
     let mutable end'time = Option<DateTime>.None
     let mutable max'results = Option<int<counts>>.None
@@ -112,6 +113,8 @@ module SearchTweets =
     let mutable media'fields = ListCollector<string>()
     let mutable place'fields = ListCollector<string>()
     let mutable poll'fields = ListCollector<string>()
+    let mutable tweet'fields = ListCollector<string>()    
+    let mutable user'fields = ListCollector<string>()
 
     member __.Yield (_: unit) = ()
     member __.Zero() = ()
@@ -121,10 +124,15 @@ module SearchTweets =
     [<CustomOperation("query")>]
     member __.Query(_: unit, q: string) = query <- q
     
-    // ■ start_time
+    // ■ since_id
     // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
     [<CustomOperation("since_id")>]
     member __.SinceId(_: unit, id: string) = since'id <- Option.Some(id)
+
+    // ■ until_id
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    [<CustomOperation("until_id")>]
+    member __.UntileId(_: unit, id: string) = until'id <- Option.Some(id)
     
     // ■ start_time
     // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
@@ -177,6 +185,24 @@ module SearchTweets =
     [<CustomOperation("poll'fields")>]
     member __.AddMany(_: unit, pf: PollFields[]) = pf |> Array.map (fun e -> e.value) |> poll'fields.AddMany
 
+    // ■ tweet.fields
+    // https://developer.twitter.com/en/docs/twitter-api/data-dictionary/object-model/tweet
+    [<CustomOperation("tweet'fields")>]
+    member __.Add(_: unit, tf: TweetFields) = tweet'fields.Add(tf.value)
+    [<CustomOperation("add")>]
+    member __.And(_: unit, tf: TweetFields) = tweet'fields.Add(tf.value)
+    [<CustomOperation("tweet'fields")>]
+    member __.AddMany(_: unit, tf: TweetFields[]) = tf |> Array.map (fun e -> e.value) |> tweet'fields.AddMany
+
+    // ■ user.fields
+    // https://developer.twitter.com/en/docs/twitter-api/data-dictionary/object-model/user
+    [<CustomOperation("user'fields")>]
+    member __.Add(_: unit, uf: UserFields) = user'fields.Add(uf.value)
+    [<CustomOperation("add")>]
+    member __.And(_: unit, uf: UserFields) = user'fields.Add(uf.value)
+    [<CustomOperation("user'fields")>]
+    member __.AddMany(_: unit, uf: UserFields[]) = uf |> Array.map (fun e -> e.value) |> user'fields.AddMany
+
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
       if String.IsNullOrEmpty(query) then raise (ArgumentException("'query' must be called."))
@@ -187,6 +213,8 @@ module SearchTweets =
       params'.Add($"query={query}")
       // since_id
       since'id |> Option.iter (fun id -> params'.Add $"since_id={id}")
+      // until_id
+      until'id |> Option.iter (fun id -> params'.Add $"until_id={id}")
       // start_time
       start'time |> Option.iter (fun time -> params'.Add$"""start_time={time |> to_string}""")
       // end_time
@@ -203,6 +231,12 @@ module SearchTweets =
       // poll.fields
       let polls = poll'fields.Close() |> join
       if String.IsNullOrEmpty(polls) |> not then params'.Add $"place.fields=%s{polls}"
+      // tweet.fields
+      let tweets = tweet'fields.Close() |> join
+      if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
+      // user.fields
+      let users = user'fields.Close() |> join
+      if String.IsNullOrEmpty(users) |> not then params'.Add $"user.fields=%s{users}"
       // max_results
       if max'results.IsSome then params'.Add $"max_results=%d{max'results.Value}"
       
