@@ -106,6 +106,7 @@ module SearchTweets =
     let mutable expansions = ListCollector<string>()
     let mutable media'fields = ListCollector<string>()
     let mutable place'fields = ListCollector<string>()
+    let mutable poll'fields = ListCollector<string>()
 
     member __.Yield (_: unit) = ()
     member __.Zero() = ()
@@ -150,6 +151,15 @@ module SearchTweets =
     [<CustomOperation("place'fields")>]
     member __.AddMany(_: unit, pf: PlaceFields[]) = pf |> Array.map (fun e -> e.value) |> place'fields.AddMany
 
+    // ■ poll.fields
+    // https://developer.twitter.com/en/docs/twitter-api/data-dictionary/object-model/poll
+    [<CustomOperation("poll'fields")>]
+    member __.Add(_: unit, pf: PollFields) = poll'fields.Add(pf.value)
+    [<CustomOperation("add")>]
+    member __.And(_: unit, pf: PollFields) = poll'fields.Add(pf.value)
+    [<CustomOperation("poll'fields")>]
+    member __.AddMany(_: unit, pf: PollFields[]) = pf |> Array.map (fun e -> e.value) |> poll'fields.AddMany
+
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
       if String.IsNullOrEmpty(query) then raise (ArgumentException("'query' must be called."))
@@ -167,11 +177,14 @@ module SearchTweets =
       let mf = (',', media'fields.Close()) |> String.Join
       if String.IsNullOrEmpty(mf) |> not then params'.Add $"media.fields=%s{mf}"
       // place.fields
-      let pf = (',', place'fields.Close()) |> String.Join
-      if String.IsNullOrEmpty(pf) |> not then params'.Add $"place.fields=%s{pf}"
+      let places = (',', place'fields.Close()) |> String.Join
+      if String.IsNullOrEmpty(places) |> not then params'.Add $"place.fields=%s{places}"
+      // poll.fields
+      let polls = (',', poll'fields.Close()) |> String.Join
+      if String.IsNullOrEmpty(polls) |> not then params'.Add $"place.fields=%s{polls}"
       // max_results
       if max'results.IsSome then params'.Add $"max_results=%d{max'results.Value}"
-
+      
       let p =  ('&', params'.Close()) |> String.Join
 
       use request = new HttpRequestMessage(HttpMethod.Get, $"{ep_recent}?{p}")

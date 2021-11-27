@@ -22,6 +22,10 @@ recent'search client {
   add PlaceFields.name
   add PlaceFields.id
 
+  poll'fields PollFields.duration'minutes
+  add PollFields.options
+  add PollFields.id
+
   max_results 10<counts>
   search
 }
@@ -45,6 +49,10 @@ recent'search client {
   place'fields PlaceFields.country
   add PlaceFields.name
   add PlaceFields.id
+
+  poll'fields PollFields.duration'minutes
+  add PollFields.options
+  add PollFields.id
 
   max_results 10<counts>
   search
