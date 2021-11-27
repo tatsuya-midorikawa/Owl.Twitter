@@ -125,4 +125,13 @@ users'by  client {
 }
 |> printfn "%s"
 
+printfn "----------"
+
+users'by'username  client {
+  username "_midoliy_"
+  search
+  sync
+}
+|> printfn "%s"
+
 client |> Twitter.disconnect
