@@ -14,6 +14,10 @@ recent'search client {
   add Expansions.attachments'media'keys
   add Expansions.geo'place'id
 
+  media'fields MediaFields.alt'text
+  add MediaFields.duration'ms
+  add MediaFields.url
+
   max_results 10<counts>
   search
 }
@@ -29,6 +33,10 @@ recent'search client {
   expansions Expansions.author'id
   add Expansions.attachments'media'keys
   add Expansions.geo'place'id
+
+  media'fields MediaFields.alt'text
+  add MediaFields.duration'ms
+  add MediaFields.url
 
   max_results 10<counts>
   search

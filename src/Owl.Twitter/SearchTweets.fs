@@ -104,6 +104,7 @@ module SearchTweets =
     let mutable end'time = Option<DateTime>.None
     let mutable max'results = Option<int<counts>>.None
     let mutable expansions = ListCollector<string>()
+    let mutable media'fields = ListCollector<string>()
 
     member __.Yield (_: unit) = ()
     member __.Zero() = ()
@@ -116,7 +117,7 @@ module SearchTweets =
     [<CustomOperation("end_time")>]
     member __.Set(_: unit, et: DateTime) = end'time <- Option.Some(et)
 
-    // ■ Expansions
+    // ■ expansions
     // https://developer.twitter.com/en/docs/twitter-api/expansions
     [<CustomOperation("expansions")>]
     member __.Add(_: unit, exp: Expansions) = expansions.Add(exp.value)
@@ -125,8 +126,19 @@ module SearchTweets =
     [<CustomOperation("expansions")>]
     member __.AddMany(_: unit, exp: Expansions[]) = exp |> Array.map (fun e -> e.value) |> expansions.AddMany
     
+    // ■ max_results
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
     [<CustomOperation("max_results")>]
     member __.Set(_: unit, count: int<counts>) = max'results <- Option.Some(count)
+
+    // ■ media.fields
+    // https://developer.twitter.com/en/docs/twitter-api/data-dictionary/object-model/media
+    [<CustomOperation("media'fields")>]
+    member __.Add(_: unit, mf: MediaFields) = media'fields.Add(mf.value)
+    [<CustomOperation("add")>]
+    member __.And(_: unit, mf: MediaFields) = media'fields.Add(mf.value)
+    [<CustomOperation("media'fields")>]
+    member __.AddMany(_: unit, mf: MediaFields[]) = mf |> Array.map (fun e -> e.value) |> media'fields.AddMany
 
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
