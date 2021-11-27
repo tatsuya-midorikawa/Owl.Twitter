@@ -77,7 +77,7 @@ module Timelines =
     member __.AddMany(_: unit, exp: Expansions[]) = exp |> Array.map (fun e -> e.value) |> expansions.AddMany
     
     // ■ max_results
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("max_results")>]
     member __.Set(_: unit, count: int<counts>) = max'results <- Option.Some(count)
 
@@ -247,7 +247,7 @@ module Timelines =
     member __.AddMany(_: unit, exp: Expansions[]) = exp |> Array.map (fun e -> e.value) |> expansions.AddMany
     
     // ■ max_results
-    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
     [<CustomOperation("max_results")>]
     member __.Set(_: unit, count: int<counts>) = max'results <- Option.Some(count)
 
