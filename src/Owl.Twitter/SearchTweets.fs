@@ -105,6 +105,7 @@ module SearchTweets =
     let mutable max'results = Option<int<counts>>.None
     let mutable expansions = ListCollector<string>()
     let mutable media'fields = ListCollector<string>()
+    let mutable place'fields = ListCollector<string>()
 
     member __.Yield (_: unit) = ()
     member __.Zero() = ()
@@ -140,6 +141,15 @@ module SearchTweets =
     [<CustomOperation("media'fields")>]
     member __.AddMany(_: unit, mf: MediaFields[]) = mf |> Array.map (fun e -> e.value) |> media'fields.AddMany
 
+    // ■ place.fields
+    // https://developer.twitter.com/en/docs/twitter-api/data-dictionary/object-model/place
+    [<CustomOperation("place'fields")>]
+    member __.Add(_: unit, pf: PlaceFields) = place'fields.Add(pf.value)
+    [<CustomOperation("add")>]
+    member __.And(_: unit, pf: PlaceFields) = place'fields.Add(pf.value)
+    [<CustomOperation("place'fields")>]
+    member __.AddMany(_: unit, pf: PlaceFields[]) = pf |> Array.map (fun e -> e.value) |> place'fields.AddMany
+
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
       if String.IsNullOrEmpty(query) then raise (ArgumentException("'query' must be called."))
@@ -153,6 +163,12 @@ module SearchTweets =
       // expansions
       let expansions = (',', expansions.Close()) |> String.Join
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
+      // media.fields
+      let mf = (',', media'fields.Close()) |> String.Join
+      if String.IsNullOrEmpty(mf) |> not then params'.Add $"media.fields=%s{mf}"
+      // place.fields
+      let pf = (',', place'fields.Close()) |> String.Join
+      if String.IsNullOrEmpty(pf) |> not then params'.Add $"place.fields=%s{pf}"
       // max_results
       if max'results.IsSome then params'.Add $"max_results=%d{max'results.Value}"
 

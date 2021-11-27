@@ -18,6 +18,10 @@ recent'search client {
   add MediaFields.duration'ms
   add MediaFields.url
 
+  place'fields PlaceFields.country
+  add PlaceFields.name
+  add PlaceFields.id
+
   max_results 10<counts>
   search
 }
@@ -37,6 +41,10 @@ recent'search client {
   media'fields MediaFields.alt'text
   add MediaFields.duration'ms
   add MediaFields.url
+
+  place'fields PlaceFields.country
+  add PlaceFields.name
+  add PlaceFields.id
 
   max_results 10<counts>
   search
