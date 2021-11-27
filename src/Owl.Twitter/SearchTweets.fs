@@ -14,6 +14,9 @@ module SearchTweets =
   [<Literal>]
   let private ep_all = "https://api.twitter.com/2/tweets/search/all"
   
+  let private to_string (dt: DateTime) = dt.ToString("yyyy-MM-ddTHH:mm:ssZ")
+  let private join (xs: string list) = String.Join(',', xs)
+
   type Expansions = 
     { value: string }
     static member attachments'poll'ids = { value = "attachments.poll_ids" }
@@ -101,6 +104,8 @@ module SearchTweets =
 
   type RecentSearchTweetsBuilder (client: Twitter.Client) =
     let mutable query = ""
+    let mutable since'id = Option<string>.None
+    let mutable start'time = Option<DateTime>.None
     let mutable end'time = Option<DateTime>.None
     let mutable max'results = Option<int<counts>>.None
     let mutable expansions = ListCollector<string>()
@@ -116,8 +121,20 @@ module SearchTweets =
     [<CustomOperation("query")>]
     member __.Query(_: unit, q: string) = query <- q
     
+    // ■ start_time
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    [<CustomOperation("since_id")>]
+    member __.SinceId(_: unit, id: string) = since'id <- Option.Some(id)
+    
+    // ■ start_time
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
+    [<CustomOperation("start_time")>]
+    member __.SetStartTime(_: unit, st: DateTime) = start'time <- Option.Some(st)
+
+    // ■ end_time
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/search/api-reference/get-tweets-search-recent
     [<CustomOperation("end_time")>]
-    member __.Set(_: unit, et: DateTime) = end'time <- Option.Some(et)
+    member __.SetEndTime(_: unit, et: DateTime) = end'time <- Option.Some(et)
 
     // ■ expansions
     // https://developer.twitter.com/en/docs/twitter-api/expansions
@@ -168,19 +185,23 @@ module SearchTweets =
 
       // query
       params'.Add($"query={query}")
+      // since_id
+      since'id |> Option.iter (fun id -> params'.Add $"since_id={id}")
+      // start_time
+      start'time |> Option.iter (fun time -> params'.Add$"""start_time={time |> to_string}""")
       // end_time
-      if end'time.IsSome then params'.Add $"""end_time={(end'time.Value.ToString "yyyy-MM-ddTHH:mm:ssZ")}"""
+      end'time |> Option.iter (fun time -> params'.Add$"""end_time={time |> to_string}""")
       // expansions
       let expansions = (',', expansions.Close()) |> String.Join
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // media.fields
-      let mf = (',', media'fields.Close()) |> String.Join
+      let mf = media'fields.Close() |> join
       if String.IsNullOrEmpty(mf) |> not then params'.Add $"media.fields=%s{mf}"
       // place.fields
-      let places = (',', place'fields.Close()) |> String.Join
+      let places = place'fields.Close() |> join
       if String.IsNullOrEmpty(places) |> not then params'.Add $"place.fields=%s{places}"
       // poll.fields
-      let polls = (',', poll'fields.Close()) |> String.Join
+      let polls = poll'fields.Close() |> join
       if String.IsNullOrEmpty(polls) |> not then params'.Add $"place.fields=%s{polls}"
       // max_results
       if max'results.IsSome then params'.Add $"max_results=%d{max'results.Value}"
