@@ -161,7 +161,7 @@ module Timelines =
       if String.IsNullOrEmpty(places) |> not then params'.Add $"place.fields=%s{places}"
       // poll.fields
       let polls = poll'fields.Close() |> join
-      if String.IsNullOrEmpty(polls) |> not then params'.Add $"place.fields=%s{polls}"
+      if String.IsNullOrEmpty(polls) |> not then params'.Add $"poll.fields=%s{polls}"
       // tweet.fields
       let tweets = tweet'fields.Close() |> join
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
@@ -331,7 +331,7 @@ module Timelines =
       if String.IsNullOrEmpty(places) |> not then params'.Add $"place.fields=%s{places}"
       // poll.fields
       let polls = poll'fields.Close() |> join
-      if String.IsNullOrEmpty(polls) |> not then params'.Add $"place.fields=%s{polls}"
+      if String.IsNullOrEmpty(polls) |> not then params'.Add $"poll.fields=%s{polls}"
       // tweet.fields
       let tweets = tweet'fields.Close() |> join
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"

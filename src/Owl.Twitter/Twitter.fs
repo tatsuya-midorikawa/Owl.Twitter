@@ -2,6 +2,7 @@
 
 open System
 open System.Net.Http
+open System.Net.Http.Headers
 
 [<AutoOpen>]
 module ParameterUnit =
@@ -32,13 +33,13 @@ module Types =
 
   type Exclude = 
     { value: string }
-    static member next'token = { value = "next_token" }
-    static member previous'token = { value = "previous_token" }
+    static member retweets = { value = "retweets" }
+    static member replies = { value = "replies" }
     
   type PaginationToken = 
     { value: string }
-    static member retweets = { value = "retweets" }
-    static member replies = { value = "replies" }
+    static member next'token = { value = "next_token" }
+    static member previous'token = { value = "previous_token" }
 
   type MediaFields =
     { value: string }
@@ -115,6 +116,10 @@ module Types =
     static member withheld = { value = "withheld" }
 
 module Twitter =
-  type Client = { http: HttpClient; bearer: string }
-  let connect bearer = { http = new HttpClient(); bearer = bearer }
+  type Client = { mutable http: HttpClient; bearer: string }
+  let connect bearer = 
+    let client = { http = new HttpClient(); bearer = bearer }
+    client.http.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue("Bearer", "bearer")
+    client
   let disconnect client = client.http.Dispose();
+
