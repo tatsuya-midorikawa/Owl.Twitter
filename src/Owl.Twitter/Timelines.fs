@@ -154,19 +154,19 @@ module Timelines =
       let expansions = (',', expansions.Close()) |> String.Join
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // media.fields
-      let mf = media'fields.Close() |> join
+      let mf = media'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(mf) |> not then params'.Add $"media.fields=%s{mf}"
       // place.fields
-      let places = place'fields.Close() |> join
+      let places = place'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(places) |> not then params'.Add $"place.fields=%s{places}"
       // poll.fields
-      let polls = poll'fields.Close() |> join
+      let polls = poll'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(polls) |> not then params'.Add $"poll.fields=%s{polls}"
       // tweet.fields
-      let tweets = tweet'fields.Close() |> join
+      let tweets = tweet'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
       // user.fields
-      let users = user'fields.Close() |> join
+      let users = user'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(users) |> not then params'.Add $"user.fields=%s{users}"
       // max_results
       if max'results.IsSome then params'.Add $"max_results=%d{max'results.Value}"
@@ -324,19 +324,19 @@ module Timelines =
       let expansions = (',', expansions.Close()) |> String.Join
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // media.fields
-      let mf = media'fields.Close() |> join
+      let mf = media'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(mf) |> not then params'.Add $"media.fields=%s{mf}"
       // place.fields
-      let places = place'fields.Close() |> join
+      let places = place'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(places) |> not then params'.Add $"place.fields=%s{places}"
       // poll.fields
-      let polls = poll'fields.Close() |> join
+      let polls = poll'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(polls) |> not then params'.Add $"poll.fields=%s{polls}"
       // tweet.fields
-      let tweets = tweet'fields.Close() |> join
+      let tweets = tweet'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
       // user.fields
-      let users = user'fields.Close() |> join
+      let users = user'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(users) |> not then params'.Add $"user.fields=%s{users}"
       // max_results
       if max'results.IsSome then params'.Add $"max_results=%d{max'results.Value}"

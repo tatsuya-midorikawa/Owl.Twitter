@@ -3,6 +3,7 @@
 open System
 open System.Net.Http
 open System.Net.Http.Headers
+open Microsoft.FSharp.Core.CompilerServices
 
 [<AutoOpen>]
 module ParameterUnit =
@@ -15,10 +16,13 @@ module Functions =
     System.Threading.Tasks.Task.WaitAll t
     t.Result
 
+module String = 
+  let internal iter (f: string -> unit) (s: string) = if not (String.IsNullOrWhiteSpace s) then f s
+  let internal join (separator: char) (xs: string list) = String.Join(separator, xs)
+
 [<AutoOpen>]
 module Types = 
   let internal to_string (dt: DateTime) = dt.ToString("yyyy-MM-ddTHH:mm:ssZ")
-  let internal join (xs: string list) = String.Join(',', xs)
 
   type Expansions = 
     { value: string }
@@ -114,6 +118,41 @@ module Types =
     static member username = { value = "username" }
     static member verified = { value = "verified" }
     static member withheld = { value = "withheld" }
+
+  type internal Parameter = {
+    mutable exclude: Option<string>
+    mutable since'id: Option<string>
+    mutable until'id: Option<string>
+    mutable start'time: Option<DateTime>
+    mutable end'time: Option<DateTime>
+    mutable max'results: Option<int<counts>>
+    mutable pagination'token: Option<string>
+    mutable expansions: ListCollector<string>
+    mutable media'fields: ListCollector<string>
+    mutable place'fields: ListCollector<string>
+    mutable poll'fields: ListCollector<string>
+    mutable tweet'fields: ListCollector<string>
+    mutable user'fields: ListCollector<string>
+  }
+  with
+    member __.build () = 
+      let mutable params' = ListCollector<string>()
+
+      __.exclude |> Option.iter (fun x -> params'.Add $"exclude=%s{x}")
+      __.since'id |> Option.iter (fun x -> params'.Add $"since_id=%s{x}")
+      __.until'id |> Option.iter (fun x -> params'.Add $"until_id=%s{x}")
+      __.start'time |> Option.iter (fun x -> params'.Add $"start_time=%s{to_string x}")
+      __.end'time |> Option.iter (fun x -> params'.Add $"end_time=%s{to_string x}")
+      __.max'results |> Option.iter (fun x -> params'.Add $"max_results=%d{x}")
+      __.pagination'token |> Option.iter (fun x -> params'.Add $"pagination_token=%s{x}")
+      __.expansions.Close() |> String.join ',' |> String.iter (fun x -> params'.Add $"expansions=%s{x}")
+      __.media'fields.Close() |> String.join ',' |> String.iter (fun x -> params'.Add $"media.fields=%s{x}")
+      __.place'fields.Close() |> String.join ',' |> String.iter (fun x -> params'.Add $"place.fields=%s{x}")
+      __.poll'fields.Close() |> String.join ',' |> String.iter (fun x -> params'.Add $"poll.fields=%s{x}")
+      __.tweet'fields.Close() |> String.join ',' |> String.iter (fun x -> params'.Add $"tweets.fields=%s{x}")
+      __.user'fields.Close() |> String.join ',' |> String.iter (fun x -> params'.Add $"user.fields=%s{x}")
+      
+      params'.Close() |> String.join '&'
 
 module Twitter =
   type Client = { mutable http: HttpClient; bearer: string }

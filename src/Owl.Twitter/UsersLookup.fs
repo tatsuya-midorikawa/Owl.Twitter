@@ -71,20 +71,20 @@ module UsersLookup =
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
       // required
-      let usernames = usernames.Close() |> join
+      let usernames = usernames.Close() |> String.join ','
       if String.IsNullOrEmpty(usernames) then raise (ArgumentException("'usernames' must be called."))
 
       let mutable params' = ListCollector<string>()
       // usernames
       params'.Add $"usernames=%s{usernames}"
       // expansions
-      let expansions = expansions.Close() |> join
+      let expansions = expansions.Close() |> String.join ','
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // tweet.fields
-      let tweets = tweet'fields.Close() |> join
+      let tweets = tweet'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
       // user.fields
-      let users = user'fields.Close() |> join
+      let users = user'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(users) |> not then params'.Add $"user.fields=%s{users}"
       
       let p =  ('&', params'.Close()) |> String.Join
@@ -151,13 +151,13 @@ module UsersLookup =
 
       let mutable params' = ListCollector<string>()
       // expansions
-      let expansions = expansions.Close() |> join
+      let expansions = expansions.Close() |> String.join ','
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // tweet.fields
-      let tweets = tweet'fields.Close() |> join
+      let tweets = tweet'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
       // user.fields
-      let users = user'fields.Close() |> join
+      let users = user'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(users) |> not then params'.Add $"user.fields=%s{users}"
       
       let p =  ('&', params'.Close()) |> String.Join
@@ -224,20 +224,20 @@ module UsersLookup =
     [<CustomOperation("search")>]
     member __.Search(_: unit) =
       // required
-      let ids = ids.Close() |> join
+      let ids = ids.Close() |> String.join ','
       if String.IsNullOrEmpty(ids) then raise (ArgumentException("'ids' must be called."))
 
       let mutable params' = ListCollector<string>()
       // ids
       params'.Add $"ids=%s{ids}"
       // expansions
-      let expansions = expansions.Close() |> join
+      let expansions = expansions.Close() |> String.join ','
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // tweet.fields
-      let tweets = tweet'fields.Close() |> join
+      let tweets = tweet'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
       // user.fields
-      let users = user'fields.Close() |> join
+      let users = user'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(users) |> not then params'.Add $"user.fields=%s{users}"
       
       let p =  ('&', params'.Close()) |> String.Join
@@ -304,13 +304,13 @@ module UsersLookup =
 
       let mutable params' = ListCollector<string>()
       // expansions
-      let expansions = expansions.Close() |> join
+      let expansions = expansions.Close() |> String.join ','
       if String.IsNullOrEmpty(expansions) |> not then params'.Add $"expansions=%s{expansions}"
       // tweet.fields
-      let tweets = tweet'fields.Close() |> join
+      let tweets = tweet'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(tweets) |> not then params'.Add $"tweets.fields=%s{tweets}"
       // user.fields
-      let users = user'fields.Close() |> join
+      let users = user'fields.Close() |> String.join ','
       if String.IsNullOrEmpty(users) |> not then params'.Add $"user.fields=%s{users}"
       
       let p =  ('&', params'.Close()) |> String.Join
